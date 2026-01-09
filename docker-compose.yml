@@ -1,0 +1,91 @@
+services:
+  # Databases
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: tsdns
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: tsdns
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tsdns -d tsdns"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mysql:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: tsdns
+      MYSQL_USER: tsdns
+      MYSQL_PASSWORD: password
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:8-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # TSDNS Instances
+  tsdns-postgres:
+    build: .
+    ports:
+      - "41144:41144"
+      - "8080:8080"
+    environment:
+      TSDNS_STORAGE_DSN: "postgres://tsdns:password@postgres:5432/tsdns?sslmode=disable"
+      TSDNS_API_LISTEN: "0.0.0.0:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  tsdns-mysql:
+    build: .
+    ports:
+      - "41145:41144"
+      - "8081:8080"
+    environment:
+      TSDNS_STORAGE_DSN: "mysql://tsdns:password@mysql:3306/tsdns?parseTime=true"
+      TSDNS_API_LISTEN: "0.0.0.0:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  tsdns-redis:
+    build: .
+    ports:
+      - "41146:41144"
+      - "8082:8080"
+    environment:
+      TSDNS_STORAGE_DSN: "redis://redis:6379/0"
+      TSDNS_API_LISTEN: "0.0.0.0:8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  tsdns-sqlite:
+    build: .
+    ports:
+      - "41147:41144"
+      - "8083:8080"
+    environment:
+      TSDNS_STORAGE_DSN: "sqlite:/data/tsdns.sqlite"
+      TSDNS_API_LISTEN: "0.0.0.0:8080"
+    volumes:
+      - tsdns-data:/data
+
+volumes:
+  tsdns-data:

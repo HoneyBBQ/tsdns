@@ -1,0 +1,91 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - "main"
+    tags:
+      - "v*.*.*"
+  pull_request:
+    branches:
+      - "main"
+
+# Explicit permissions for security hardening
+permissions:
+  contents: read
+  packages: write  # Required for pushing to GHCR
+  id-token: write  # Required for generating provenance and SBOM
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          # Publish to both Docker Hub and GitHub Container Registry (GHCR)
+          images: |
+            ${{ secrets.DOCKER_USERNAME }}/tsdns
+            ghcr.io/${{ github.repository }}
+          tags: |
+            # Update 'latest' tag on push to default branch
+            type=raw,value=latest,enable={{is_default_branch}}
+            # Branch name as tag
+            type=ref,event=branch
+            # PR number as tag
+            type=ref,event=pr
+            # Semantic versioning tags (e.g., v1.2.3 -> 1.2.3, 1.2, 1)
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            # Use short commit SHA as a unique tag for traceability
+            type=sha
+          # Standardized OCI labels for image metadata
+          labels: |
+            org.opencontainers.image.title=tsdns
+            org.opencontainers.image.description=A lightweight TS3 DNS server written in Go
+            org.opencontainers.image.vendor=honeybbq
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Login to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ steps.meta.outputs.version }}
+            COMMIT=${{ github.sha }}
+            DATE=${{ fromJson(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
+          # Build for multiple architectures: amd64 (servers), arm64 (Apple Silicon), arm/v7 (IoT)
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          # Generate SLSA provenance and SBOM for enhanced supply chain security
+          provenance: true
+          sbom: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

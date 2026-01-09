@@ -1,0 +1,5 @@
+public.teamspeak.com=12.13.14.15:9987
+voice.teamspeak.com=1.2.3.4:9987
+*.ts3server.com=5.6.7.8:9987
+# This is a comment
+test.com=NORESPONSE

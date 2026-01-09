@@ -1,0 +1,34 @@
+# tsdns-go configuration example
+
+# TSDNS Protocol Server Settings
+tsdns:
+  # Listen address for the TSDNS protocol (default: 0.0.0.0:41144)
+  listen: "0.0.0.0:41144"
+  # How often to refresh the in-memory cache from storage (default: 30s)
+  cache_refresh_interval: "30s"
+
+# Administrative API Settings
+api:
+  # Listen address for the HTTP API (default: 127.0.0.1:8080)
+  listen: "0.0.0.0:8080"
+  # Shared secret token for API authentication
+  # If empty, API will be unprotected (not recommended unless using Unix Socket)
+  token: "change-me-to-a-secure-token"
+  # Unix Domain Socket path for local management (optional)
+  # socket: "/tmp/tsdns.sock"
+
+# Storage Backend Configuration
+storage:
+  # DSN (Data Source Name) formats:
+  # SQLite:     sqlite:./tsdns.sqlite
+  # PostgreSQL: postgres://user:pass@host:port/dbname?sslmode=disable
+  # MySQL:      mysql://user:pass@tcp(host:port)/dbname?charset=utf8mb4&parseTime=True&loc=Local
+  # Redis:      redis://:pass@host:port/db
+  dsn: "sqlite:./tsdns.sqlite"
+
+# Logging Settings
+logger:
+  # Log level: debug, info, warn, error (default: info)
+  level: "info"
+  # Log format: console, json (default: console)
+  format: "console"

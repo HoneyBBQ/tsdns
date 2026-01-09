@@ -1,0 +1,6 @@
+.git
+.github
+**/*.md
+**/*_test.go
+example
+terminals
