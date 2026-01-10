@@ -19,6 +19,8 @@ permissions:
 jobs:
   docker:
     runs-on: ubuntu-latest
+    env:
+      DOCKER_HUB_REPO: honeybbq/tsdns
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -29,8 +31,8 @@ jobs:
         with:
           # Publish to both Docker Hub and GitHub Container Registry (GHCR)
           images: |
-            ${{ secrets.DOCKER_USERNAME }}/tsdns
             ghcr.io/${{ github.repository }}
+            ${{ env.DOCKER_HUB_REPO }}
           tags: |
             # Update 'latest' tag on push to default branch
             type=raw,value=latest,enable={{is_default_branch}}
@@ -47,7 +49,7 @@ jobs:
           # Standardized OCI labels for image metadata
           labels: |
             org.opencontainers.image.title=tsdns
-            org.opencontainers.image.description=A lightweight TS3 DNS server written in Go
+            org.opencontainers.image.description=A enhanced TSDNS server with Regex and 4 backends (SQLite/PostgreSQL/MySQL/Redis).
             org.opencontainers.image.vendor=honeybbq
 
       - name: Set up QEMU
@@ -89,3 +91,13 @@ jobs:
           sbom: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Update Docker Hub description
+        if: github.event_name != 'pull_request'
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          repository: ${{ env.DOCKER_HUB_REPO }}
+          short-description: ${{ fromJson(steps.meta.outputs.json).labels['org.opencontainers.image.description'] }}
+          readme-filepath: ./README.md

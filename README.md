@@ -1,7 +1,10 @@
 # tsdns
 
-[中文说明](README_CN.md) | [English Documentation](README.md)
+[中文说明](https://github.com/honeybbq/tsdns/blob/main/README_CN.md) | [English Documentation](https://github.com/honeybbq/tsdns/blob/main/README.md)
 
+[![GitHub](https://img.shields.io/badge/GitHub-Repo-181717?logo=github&logoColor=white)](https://github.com/honeybbq/tsdns)
+[![Docker Hub](https://img.shields.io/badge/Docker_Hub-Image-2496ED?logo=docker&logoColor=white)](https://hub.docker.com/r/honeybbq/tsdns)
+[![GHCR](https://img.shields.io/badge/GHCR-Image-444444?logo=github&logoColor=white)](https://github.com/honeybbq/tsdns/pkgs/container/tsdns)
 [![Build Status](https://github.com/honeybbq/tsdns/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/honeybbq/tsdns/actions)
 [![Go Report Card](https://goreportcard.com/badge/github.com/honeybbq/tsdns)](https://goreportcard.com/report/github.com/honeybbq/tsdns)
 [![Go Reference](https://pkg.go.dev/badge/github.com/honeybbq/tsdns.svg)](https://pkg.go.dev/github.com/honeybbq/tsdns)
@@ -9,9 +12,43 @@
 [![License](https://img.shields.io/github/license/honeybbq/tsdns.svg)](https://github.com/honeybbq/tsdns/blob/main/LICENSE)
 [![GitHub release](https://img.shields.io/github/v/release/honeybbq/tsdns.svg)](https://github.com/honeybbq/tsdns/releases)
 
-`tsdns` is a TeamSpeak TSDNS protocol compatible server implemented in Go. It provides an administrative API, multiple storage backend options, and a command-line interface for record management.
+`tsdns` is a enhanced TeamSpeak TSDNS server featuring Regex matching and support for four storage backends (SQLite, PostgreSQL, MySQL, and Redis). It provides an administrative API and a command-line interface for seamless record management.
 
 > This project is a protocol-compatible implementation and is not affiliated with TeamSpeak Systems GmbH.
+
+---
+
+## Quick Start with Docker
+
+The easiest way to run `tsdns` is using Docker.
+
+### Docker Run
+```bash
+docker run -d --name tsdns \
+  -p 41144:41144 \
+  -p 8080:8080 \
+  -e TSDNS_API_TOKEN=your-secret-token \
+  -e TSDNS_STORAGE_DSN=sqlite:/data/tsdns.sqlite \
+  -v tsdns-data:/data \
+  honeybbq/tsdns:latest
+```
+
+### Docker Compose
+```yaml
+services:
+  tsdns:
+    image: honeybbq/tsdns:latest
+    container_name: tsdns
+    ports:
+      - "41144:41144"
+      - "8080:8080"
+    environment:
+      - TSDNS_API_TOKEN=your-secret-token
+      - TSDNS_STORAGE_DSN=sqlite:/data/tsdns.sqlite
+    volumes:
+      - ./data:/data
+    restart: always
+```
 
 ---
 
@@ -35,18 +72,6 @@
 ---
 
 ## Installation
-
-### Docker
-
-```bash
-docker run -d --name tsdns \
-  -p 41144:41144 \
-  -p 8080:8080 \
-  -e TSDNS_API_TOKEN=your-secret-token \
-  -e TSDNS_STORAGE_DSN=sqlite:/data/tsdns.sqlite \
-  -v tsdns-data:/data \
-  ghcr.io/honeybbq/tsdns:latest
-```
 
 ### From Source
 
@@ -132,7 +157,6 @@ Set the backend via `TSDNS_STORAGE_DSN`:
 | **MySQL** | `mysql://<user>:<pass>@<host>:<port>/<db>` |
 | **Redis** | `redis://:<pass>@<host>:<port>/<db>` |
 
-*Note: PostgreSQL uses native `inet` types for IP storage.*
 
 ---
 
@@ -159,4 +183,4 @@ Set the backend via `TSDNS_STORAGE_DSN`:
 
 ## License
 
-MIT License. See [LICENSE](LICENSE).
+MIT License. See [LICENSE](https://github.com/honeybbq/tsdns/blob/main/LICENSE).
