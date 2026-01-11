@@ -1,0 +1,22 @@
+# tsdns configuration for deb/rpm/apk packages
+tsdns:
+  # Listen address for the TSDNS protocol
+  listen: "0.0.0.0:41144"
+  # How often to refresh the in-memory cache from storage
+  cache_refresh_interval: "30s"
+
+api:
+  # Listen address for the HTTP API
+  listen: "127.0.0.1:8080"
+  # Shared secret token for API authentication
+  token: ""
+  # Unix Domain Socket path for local management
+  socket: "/run/tsdns/tsdns.sock"
+
+storage:
+  # Default SQLite path for packages
+  dsn: "sqlite:/var/lib/tsdns/tsdns.sqlite"
+
+logger:
+  level: "info"
+  format: "console"

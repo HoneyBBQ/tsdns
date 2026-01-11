@@ -17,6 +17,7 @@ builds:
       - linux
       - windows
       - darwin
+      - freebsd
     goarch:
       - amd64
       - arm64
@@ -31,20 +32,50 @@ builds:
         goarch: arm
       - goos: darwin
         goarch: "386"
+      - goos: freebsd
+        goarch: "386"
+      - goos: freebsd
+        goarch: arm
     main: ./cmd/tsdns
     binary: tsdns
     ldflags:
       - -s -w -X 'github.com/honeybbq/tsdns/internal/cli.version={{.Version}}' -X 'github.com/honeybbq/tsdns/internal/cli.commit={{.Commit}}' -X 'github.com/honeybbq/tsdns/internal/cli.date={{.Date}}'
 
 archives:
-  - formats: [tar.gz]
+  - id: default
+    formats: [tar.gz]
     # this name template makes the result package named like tsdns_0.1.0_linux_amd64.tar.gz
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+    format_overrides:
+      - goos: windows
+        formats: [zip]
     files:
       - LICENSE
       - README.md
       - CHANGELOG.md
       - examples/*
+
+nfpms:
+  - id: tsdns
+    package_name: tsdns
+    vendor: honeybbq
+    homepage: https://github.com/honeybbq/tsdns
+    maintainer: honeybbq <ckr@chenkr.cn>
+    description: Enhanced TeamSpeak TSDNS server featuring Regex matching and support for multiple storage backends.
+    license: MIT
+    formats:
+      - deb
+      - rpm
+      - apk
+    contents:
+      - src: scripts/tsdns.service
+        dst: /lib/systemd/system/tsdns.service
+      - src: scripts/config.yaml
+        dst: /etc/tsdns/config.yaml
+        type: config
+    scripts:
+      postinstall: scripts/postinstall.sh
+      preremove: scripts/preremove.sh
 
 checksum:
   name_template: "checksums.txt"

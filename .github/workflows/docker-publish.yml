@@ -49,7 +49,7 @@ jobs:
           # Standardized OCI labels for image metadata
           labels: |
             org.opencontainers.image.title=tsdns
-            org.opencontainers.image.description=A enhanced TSDNS server with Regex and 4 backends (SQLite/PostgreSQL/MySQL/Redis).
+            org.opencontainers.image.description=Enhanced TeamSpeak TSDNS server with Regex matching and support for 4 storage backends (SQLite, PostgreSQL, MySQL, and Redis).
             org.opencontainers.image.vendor=honeybbq
 
       - name: Set up QEMU

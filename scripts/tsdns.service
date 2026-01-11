@@ -1,0 +1,15 @@
+[Unit]
+Description=TeamSpeak TSDNS server
+After=network.target
+
+[Service]
+Type=simple
+User=tsdns
+Group=tsdns
+ExecStart=/usr/bin/tsdns serve --config /etc/tsdns/config.yaml
+Restart=on-failure
+# Ensure the user has access to the storage file if using SQLite
+# Environment=TSDNS_STORAGE_DSN=sqlite:/var/lib/tsdns/tsdns.sqlite
+
+[Install]
+WantedBy=multi-user.target
