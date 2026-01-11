@@ -5,10 +5,9 @@
 [![GitHub](https://img.shields.io/badge/GitHub-Repo-181717?logo=github&logoColor=white)](https://github.com/honeybbq/tsdns)
 [![Docker Hub](https://img.shields.io/badge/Docker_Hub-Image-2496ED?logo=docker&logoColor=white)](https://hub.docker.com/r/honeybbq/tsdns)
 [![GHCR](https://img.shields.io/badge/GHCR-Image-444444?logo=github&logoColor=white)](https://github.com/honeybbq/tsdns/pkgs/container/tsdns)
-
 [![Build Status](https://github.com/honeybbq/tsdns/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/honeybbq/tsdns/actions)
 [![Go Report Card](https://goreportcard.com/badge/github.com/honeybbq/tsdns)](https://goreportcard.com/report/github.com/honeybbq/tsdns)
-[![Go Reference](https://pkg.go.dev/badge/github.com/honeybbq/tsdns.svg)](https://pkg.go.dev/badge/github.com/honeybbq/tsdns)
+[![Go Reference](https://pkg.go.dev/badge/github.com/honeybbq/tsdns.svg)](https://pkg.go.dev/github.com/honeybbq/tsdns)
 [![Docker Pulls](https://img.shields.io/docker/pulls/honeybbq/tsdns.svg)](https://hub.docker.com/r/honeybbq/tsdns)
 [![License](https://img.shields.io/github/license/honeybbq/tsdns.svg)](https://github.com/honeybbq/tsdns/blob/main/LICENSE)
 [![GitHub release](https://img.shields.io/github/v/release/honeybbq/tsdns.svg)](https://github.com/honeybbq/tsdns/releases)
@@ -16,40 +15,6 @@
 `tsdns` 是一款增强型 TeamSpeak TSDNS 服务端，支持正则表达式匹配与四种主流存储后端（SQLite、PostgreSQL、MySQL 和 Redis）。同时提供管理 API 和命令行工具，方便高效地进行记录管理。
 
 > 本项目为独立协议实现，不隶属于 TeamSpeak Systems GmbH。
-
----
-
-## Docker 快速开始
-
-使用 Docker 是运行 `tsdns` 最简单的方式。
-
-### Docker Run
-```bash
-docker run -d --name tsdns \
-  -p 41144:41144 \
-  -p 8080:8080 \
-  -e TSDNS_API_TOKEN=your-secret-token \
-  -e TSDNS_STORAGE_DSN=sqlite:/data/tsdns.sqlite \
-  -v tsdns-data:/data \
-  honeybbq/tsdns:latest
-```
-
-### Docker Compose
-```yaml
-services:
-  tsdns:
-    image: honeybbq/tsdns:latest
-    container_name: tsdns
-    ports:
-      - "41144:41144"
-      - "8080:8080"
-    environment:
-      - TSDNS_API_TOKEN=your-secret-token
-      - TSDNS_STORAGE_DSN=sqlite:/data/tsdns.sqlite
-    volumes:
-      - ./data:/data
-    restart: always
-```
 
 ---
 
@@ -62,7 +27,7 @@ services:
 - **存储后端**: 支持 SQLite, PostgreSQL, MySQL 和 Redis。
 - **纯 Go SQLite**: 使用无 CGO 的 SQLite 驱动，支持跨平台部署。
 - **缓存**: 内存缓存支持可配置的后台刷新。
-- **本地零配置管理**: Docker 模式下默认开启 Unix Domain Socket，进入容器即可直接管理，无需 Token。
+- **本地零配置管理**: Docker 模式和 Linux 安装包默认开启 Unix Domain Socket，无需 Token 即可直接管理。
 - **TSDNS 规则**:
   - 支持精确匹配和通配符域名（`*` 和 `*.domain`）。
   - 支持正则表达式（通过 `reg:` 前缀）。
@@ -74,9 +39,52 @@ services:
 
 ## 安装说明
 
-### 源码安装
+### 1. 快速安装 (脚本)
 
-需要 Go 1.23 或更高版本。
+在 Linux, macOS 或 FreeBSD 上安装最新版 `tsdns` 二进制文件的最快方式：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/HoneyBBQ/tsdns/main/scripts/install.sh | sh
+```
+
+### 2. 原生安装包 (Linux 推荐)
+
+从 [Releases](https://github.com/honeybbq/tsdns/releases) 页面下载 `.deb`, `.rpm` 或 `.apk` 安装包。
+
+**Debian / Ubuntu:**
+```bash
+sudo dpkg -i tsdns_*.deb
+sudo systemctl enable --now tsdns
+```
+
+**CentOS / RHEL / Fedora:**
+```bash
+sudo rpm -ivh tsdns_*.rpm
+sudo systemctl enable --now tsdns
+```
+
+**Alpine:**
+```bash
+sudo apk add --allow-untrusted tsdns_*.apk
+```
+
+> **注意：** 原生安装包会自动创建 `tsdns` 系统用户、配置 systemd 服务，并在 `/etc/tsdns/config.yaml` 中自动生成随机 API Token。
+
+### 3. Docker
+
+```bash
+docker run -d --name tsdns \
+  -p 41144:41144 \
+  -p 8080:8080 \
+  -e TSDNS_API_TOKEN=your-secret-token \
+  -e TSDNS_STORAGE_DSN=sqlite:/data/tsdns.sqlite \
+  -v tsdns-data:/data \
+  honeybbq/tsdns:latest
+```
+
+### 4. 源码安装
+
+需要 Go 1.25 或更高版本。
 
 ```bash
 go install github.com/honeybbq/tsdns/cmd/tsdns@latest

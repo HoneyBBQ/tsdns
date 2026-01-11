@@ -18,40 +18,6 @@
 
 ---
 
-## Quick Start with Docker
-
-The easiest way to run `tsdns` is using Docker.
-
-### Docker Run
-```bash
-docker run -d --name tsdns \
-  -p 41144:41144 \
-  -p 8080:8080 \
-  -e TSDNS_API_TOKEN=your-secret-token \
-  -e TSDNS_STORAGE_DSN=sqlite:/data/tsdns.sqlite \
-  -v tsdns-data:/data \
-  honeybbq/tsdns:latest
-```
-
-### Docker Compose
-```yaml
-services:
-  tsdns:
-    image: honeybbq/tsdns:latest
-    container_name: tsdns
-    ports:
-      - "41144:41144"
-      - "8080:8080"
-    environment:
-      - TSDNS_API_TOKEN=your-secret-token
-      - TSDNS_STORAGE_DSN=sqlite:/data/tsdns.sqlite
-    volumes:
-      - ./data:/data
-    restart: always
-```
-
----
-
 ## Features
 
 - **Protocol Compatibility**: Implements the TSDNS protocol (TCP port 41144).
@@ -61,7 +27,7 @@ services:
 - **Storage Backends**: Supports SQLite, PostgreSQL, MySQL, and Redis.
 - **Pure Go SQLite**: Uses a no-CGO SQLite driver for cross-platform compatibility.
 - **Caching**: In-memory cache with configurable background refresh.
-- **Zero-Config Local Management**: Unix Domain Socket enabled by default in Docker for seamless CLI usage without tokens.
+- **Zero-Config Local Management**: Unix Domain Socket enabled by default in Docker and Linux packages for seamless CLI usage without tokens.
 - **TSDNS Rules**:
   - Exact and wildcard domain matching (`*` and `*.domain`).
   - Regex matching (via `reg:` prefix).
@@ -73,9 +39,52 @@ services:
 
 ## Installation
 
-### From Source
+### 1. Quick Install (Script)
 
-Requires Go 1.23 or later.
+The easiest way to install the latest `tsdns` binary on Linux, macOS, or FreeBSD:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/HoneyBBQ/tsdns/main/scripts/install.sh | sh
+```
+
+### 2. Native Packages (Recommended for Linux)
+
+Download the `.deb`, `.rpm`, or `.apk` package from the [Releases](https://github.com/honeybbq/tsdns/releases) page.
+
+**Debian / Ubuntu:**
+```bash
+sudo dpkg -i tsdns_*.deb
+sudo systemctl enable --now tsdns
+```
+
+**CentOS / RHEL / Fedora:**
+```bash
+sudo rpm -ivh tsdns_*.rpm
+sudo systemctl enable --now tsdns
+```
+
+**Alpine:**
+```bash
+sudo apk add --allow-untrusted tsdns_*.apk
+```
+
+> **Note:** Native packages automatically create a `tsdns` user, set up a systemd service, and generate a random API token in `/etc/tsdns/config.yaml`.
+
+### 3. Docker
+
+```bash
+docker run -d --name tsdns \
+  -p 41144:41144 \
+  -p 8080:8080 \
+  -e TSDNS_API_TOKEN=your-secret-token \
+  -e TSDNS_STORAGE_DSN=sqlite:/data/tsdns.sqlite \
+  -v tsdns-data:/data \
+  honeybbq/tsdns:latest
+```
+
+### 4. From Source
+
+Requires Go 1.25 or later.
 
 ```bash
 go install github.com/honeybbq/tsdns/cmd/tsdns@latest
