@@ -6,7 +6,7 @@ require (
 	github.com/alicebob/miniredis/v2 v2.36.1
 	github.com/glebarez/sqlite v1.11.0
 	github.com/prometheus/client_golang v1.23.2
-	github.com/redis/go-redis/v9 v9.17.2
+	github.com/redis/go-redis/v9 v9.17.3
 	github.com/spf13/cobra v1.10.2
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/mysql v1.6.0
