@@ -1,18 +1,28 @@
+<div align="center">
+
+<img src="assets/banner.png" alt="tsdns banner" width="800">
+
 # tsdns
 
-[English Documentation](https://github.com/honeybbq/tsdns/blob/main/README.md) | [中文说明](https://github.com/honeybbq/tsdns/blob/main/README_CN.md)
+增强型 TeamSpeak TSDNS 服务端，支持正则匹配、多存储后端与管理 API。
+
+<br>
 
 [![GitHub](https://img.shields.io/badge/GitHub-Repo-181717?logo=github&logoColor=white)](https://github.com/honeybbq/tsdns)
 [![Docker Hub](https://img.shields.io/badge/Docker_Hub-Image-2496ED?logo=docker&logoColor=white)](https://hub.docker.com/r/honeybbq/tsdns)
 [![GHCR](https://img.shields.io/badge/GHCR-Image-444444?logo=github&logoColor=white)](https://github.com/honeybbq/tsdns/pkgs/container/tsdns)
-[![Build Status](https://github.com/honeybbq/tsdns/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/honeybbq/tsdns/actions)
-[![Go Report Card](https://goreportcard.com/badge/github.com/honeybbq/tsdns)](https://goreportcard.com/report/github.com/honeybbq/tsdns)
 [![Go Reference](https://pkg.go.dev/badge/github.com/honeybbq/tsdns.svg)](https://pkg.go.dev/github.com/honeybbq/tsdns)
-[![Docker Pulls](https://img.shields.io/docker/pulls/honeybbq/tsdns.svg)](https://hub.docker.com/r/honeybbq/tsdns)
-[![License](https://img.shields.io/github/license/honeybbq/tsdns.svg)](https://github.com/honeybbq/tsdns/blob/main/LICENSE)
-[![GitHub release](https://img.shields.io/github/v/release/honeybbq/tsdns.svg)](https://github.com/honeybbq/tsdns/releases)
 
-`tsdns` 是一款增强型 TeamSpeak TSDNS 服务端，支持正则表达式匹配与四种主流存储后端（SQLite、PostgreSQL、MySQL 和 Redis）。同时提供管理 API 和命令行工具，方便高效地进行记录管理。
+[![CI](https://github.com/honeybbq/tsdns/actions/workflows/ci.yml/badge.svg)](https://github.com/honeybbq/tsdns/actions)
+[![Go Report Card](https://goreportcard.com/badge/github.com/honeybbq/tsdns)](https://goreportcard.com/report/github.com/honeybbq/tsdns)
+[![Codecov](https://codecov.io/gh/HoneyBBQ/tsdns/graph/badge.svg)](https://codecov.io/gh/HoneyBBQ/tsdns)
+[![Release](https://img.shields.io/github/v/release/honeybbq/tsdns.svg)](https://github.com/honeybbq/tsdns/releases)
+[![License](https://img.shields.io/github/license/honeybbq/tsdns.svg)](https://github.com/honeybbq/tsdns/blob/main/LICENSE)
+[![Docker Pulls](https://img.shields.io/docker/pulls/honeybbq/tsdns.svg)](https://hub.docker.com/r/honeybbq/tsdns)
+
+</div>
+
+---
 
 > 本项目为独立协议实现，不隶属于 TeamSpeak Systems GmbH。
 
