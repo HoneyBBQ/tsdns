@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.2.0] - 2026-03-02
+
+### Breaking Changes
+
+- **Configuration**: The `logger:` key in config files has been renamed to `log:`, and `format: console` changed to `format: text`. Please update your configuration before upgrading. See [`examples/config.yaml.example`](examples/config.yaml.example) for reference.
+
+### Changed
+
+- **SQL Backend**: Migrated from GORM to [Bun](https://bun.uptrace.dev/) ORM for smaller binary size and better performance.
+- **SQLite Optimizations**: Enabled WAL mode, `busy_timeout`, and tuned cache size by default for improved concurrent read/write performance.
+
+### Added
+
+- **Structured Logging for Dependencies**: SQL queries (via bunslog) and Redis commands are now logged through `slog` at Debug level, with slow/error queries at Warn/Error levels.
+- **Integration Tests**: Added PostgreSQL and MySQL integration tests with GitHub Actions service containers.
+
+### Improved
+
+- **Test Coverage**: Added tests for SQL repository CRUD, storage DSN parsing, and cache regex/glob matching.
+
 ## [v0.1.3] - 2026-01-12
 
 ### Added

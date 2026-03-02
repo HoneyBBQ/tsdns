@@ -17,6 +17,6 @@ storage:
   # Default SQLite path for packages
   dsn: "sqlite:/var/lib/tsdns/tsdns.sqlite"
 
-logger:
+log:
   level: "info"
-  format: "console"
+  format: "text"

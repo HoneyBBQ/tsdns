@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
+	"net"
 	"net/netip"
 	"strconv"
 	"strings"
@@ -50,6 +52,8 @@ func NewRepository(opt Options) (tsdns.RecordRepository, error) {
 		Password: opt.Password,
 		DB:       opt.DB,
 	})
+
+	c.AddHook(slogRedisHook{})
 
 	r := &repository{c: c, prefix: opt.Prefix}
 
@@ -311,4 +315,44 @@ func parseTargetStrings(targetStrings []string) []netip.AddrPort {
 	}
 
 	return targets
+}
+
+// slogRedisHook logs Redis commands via slog at Debug level.
+type slogRedisHook struct{}
+
+func (slogRedisHook) DialHook(next goredis.DialHook) goredis.DialHook {
+	return func(ctx context.Context, network, addr string) (net.Conn, error) {
+		return next(ctx, network, addr)
+	}
+}
+
+func (slogRedisHook) ProcessHook(next goredis.ProcessHook) goredis.ProcessHook {
+	return func(ctx context.Context, cmd goredis.Cmder) error {
+		start := time.Now()
+		err := next(ctx, cmd)
+		dur := time.Since(start)
+
+		if err != nil && !errors.Is(err, goredis.Nil) {
+			slog.ErrorContext(ctx, "redis command error",
+				slog.String("cmd", cmd.FullName()), slog.Duration("duration", dur), slog.Any("error", err))
+		} else {
+			slog.DebugContext(ctx, "redis command",
+				slog.String("cmd", cmd.FullName()), slog.Duration("duration", dur))
+		}
+
+		return err
+	}
+}
+
+func (slogRedisHook) ProcessPipelineHook(next goredis.ProcessPipelineHook) goredis.ProcessPipelineHook {
+	return func(ctx context.Context, cmds []goredis.Cmder) error {
+		start := time.Now()
+		err := next(ctx, cmds)
+		dur := time.Since(start)
+
+		slog.DebugContext(ctx, "redis pipeline",
+			slog.Int("commands", len(cmds)), slog.Duration("duration", dur))
+
+		return err
+	}
 }

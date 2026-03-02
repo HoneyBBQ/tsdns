@@ -23,6 +23,33 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: tsdns
+          POSTGRES_PASSWORD: tsdns
+          POSTGRES_DB: tsdns
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tsdns"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: tsdns
+          MYSQL_DATABASE: tsdns
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-go@v6
@@ -30,6 +57,9 @@ jobs:
           go-version: '1.25'
           cache: true
       - name: Run Tests
+        env:
+          TSDNS_TEST_POSTGRES_DSN: "postgres://tsdns:tsdns@127.0.0.1:5432/tsdns?sslmode=disable"
+          TSDNS_TEST_MYSQL_DSN: "root:tsdns@tcp(127.0.0.1:3306)/tsdns?parseTime=true"
         run: |
           go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
       - name: Upload coverage to Codecov
@@ -37,4 +67,4 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage.txt
-          fail_ci_if_error: false # Don't fail if Codecov upload fails
+          fail_ci_if_error: false
