@@ -3,28 +3,36 @@ package sql
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/netip"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
-	sqlite "github.com/glebarez/sqlite"
 	"github.com/honeybbq/tsdns"
-	"gorm.io/driver/mysql"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
+	"github.com/uptrace/bun"
+	"github.com/uptrace/bun/dialect/mysqldialect"
+	"github.com/uptrace/bun/dialect/pgdialect"
+	"github.com/uptrace/bun/dialect/sqlitedialect"
+	"github.com/uptrace/bun/driver/pgdriver"
+	"github.com/uptrace/bun/extra/bunslog"
+
+
+	_ "github.com/go-sql-driver/mysql"
+	_ "modernc.org/sqlite"
 )
 
 var (
-	errDialectRequired = errors.New("sql dialect is required")
-	errDSNRequired     = errors.New("sql dsn is required")
-	errRecordNotFound  = errors.New("record not found")
-	errRecordNil       = errors.New("record is nil")
-	errDomainRequired  = errors.New("domain is required")
+	errDialectRequired    = errors.New("sql dialect is required")
+	errDSNRequired        = errors.New("sql dsn is required")
+	errRecordNotFound     = errors.New("record not found")
+	errRecordNil          = errors.New("record is nil")
+	errDomainRequired     = errors.New("domain is required")
+	errUnsupportedDialect = errors.New("unsupported sql dialect")
 )
 
 // Dialect represents the type of SQL database.
@@ -46,23 +54,21 @@ type Options struct {
 }
 
 type repository struct {
-	db *gorm.DB
+	db *bun.DB
 }
 
-// recordModel defines the database schema for a single TSDNS target.
 type recordModel struct {
-	CreatedAt  time.Time `gorm:"not null"`
-	UpdatedAt  time.Time `gorm:"not null"`
-	Domain     string    `gorm:"size:255;not null;index"`
-	IP         string    `gorm:"not null;type:text"`
-	ID         int64     `gorm:"primaryKey;autoIncrement"`
-	InstanceID int64     `gorm:"not null;index"`
-	Priority   int       `gorm:"not null;default:0"`
-	Port       uint16    `gorm:"not null;default:0"`
-}
+	bun.BaseModel `bun:"table:record"`
 
-// TableName returns the table name for the record model.
-func (recordModel) TableName() string { return "record" }
+	CreatedAt  time.Time `bun:"created_at,notnull"`
+	UpdatedAt  time.Time `bun:"updated_at,notnull"`
+	Domain     string    `bun:"domain,notnull"`
+	IP         string    `bun:"ip,notnull,type:text"`
+	ID         int64     `bun:"id,pk,autoincrement"`
+	InstanceID int64     `bun:"instance_id,notnull"`
+	Priority   int       `bun:"priority,notnull,default:0"`
+	Port       uint16    `bun:"port,notnull,default:0"`
+}
 
 // NewRepository creates a new RecordRepository backed by a SQL database.
 func NewRepository(opt Options) (tsdns.RecordRepository, error) {
@@ -73,65 +79,117 @@ func NewRepository(opt Options) (tsdns.RecordRepository, error) {
 		return nil, errDSNRequired
 	}
 
-	dialector, err := buildDialector(opt)
+	db, err := openDB(opt)
 	if err != nil {
 		return nil, err
 	}
 
-	db, err := gorm.Open(dialector, &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Silent),
-	})
+	const slowQueryThreshold = 3 * time.Second
+	db.AddQueryHook(bunslog.NewQueryHook(
+		bunslog.WithQueryLogLevel(slog.LevelDebug),
+		bunslog.WithSlowQueryLogLevel(slog.LevelWarn),
+		bunslog.WithErrorQueryLogLevel(slog.LevelError),
+		bunslog.WithSlowQueryThreshold(slowQueryThreshold),
+	))
+
+	ctx := context.Background()
+
+	err = migrateSchema(ctx, db)
 	if err != nil {
 		return nil, err
 	}
+
+	// Create indexes for frequently queried columns.
+	_, _ = db.NewCreateIndex().Model((*recordModel)(nil)).
+		Index("idx_record_domain").Column("domain").IfNotExists().Exec(ctx)
+	_, _ = db.NewCreateIndex().Model((*recordModel)(nil)).
+		Index("idx_record_instance_id").Column("instance_id").IfNotExists().Exec(ctx)
 
 	// Optimize IP column for PostgreSQL using the 'inet' type.
 	if opt.Dialect == DialectPostgres {
-		_ = db.Exec("ALTER TABLE record ALTER COLUMN ip TYPE inet USING ip::inet")
+		_, _ = db.ExecContext(ctx, "ALTER TABLE record ALTER COLUMN ip TYPE inet USING ip::inet")
 	}
 
-	r := &repository{db: db}
-
-	// Auto-migrate the database schema.
-	err = r.db.AutoMigrate(&recordModel{})
-	if err != nil {
-		return nil, err
-	}
-
-	return r, nil
+	return &repository{db: db}, nil
 }
 
-func buildDialector(opt Options) (gorm.Dialector, error) {
+func migrateSchema(ctx context.Context, db *bun.DB) error {
+	_, err := db.NewCreateTable().Model((*recordModel)(nil)).IfNotExists().Exec(ctx)
+
+	return err
+}
+
+func openDB(opt Options) (*bun.DB, error) {
 	switch opt.Dialect {
 	case DialectSQLite:
-		if opt.DSN != ":memory:" {
-			dir := filepath.Dir(opt.DSN)
-			if dir != "." && dir != "" {
-				const dirPerm = 0o750
-				// Use 0o750 for better security (G301).
-				err := os.MkdirAll(dir, dirPerm)
-				if err != nil {
-					return nil, fmt.Errorf("create sqlite directory %q: %w", dir, err)
-				}
-			}
-		}
-
-		return sqlite.Open(opt.DSN), nil
+		return openSQLite(opt.DSN)
 	case DialectPostgres:
-		return postgres.Open(opt.DSN), nil
+		return openPostgres(opt.DSN), nil
 	case DialectMySQL:
-		return mysql.Open(opt.DSN), nil
+		return openMySQL(opt.DSN)
 	default:
 		return nil, fmt.Errorf("%w: %q", errUnsupportedDialect, opt.Dialect)
 	}
 }
 
-var errUnsupportedDialect = errors.New("unsupported sql dialect")
+func openSQLite(dsn string) (*bun.DB, error) {
+	if dsn != ":memory:" {
+		dir := filepath.Dir(dsn)
+		if dir != "." && dir != "" {
+			const dirPerm = 0o750
+			err := os.MkdirAll(dir, dirPerm)
+			if err != nil {
+				return nil, fmt.Errorf("create sqlite directory %q: %w", dir, err)
+			}
+		}
+	}
+
+	sqldb, err := sql.Open("sqlite", applySQLitePragmas(dsn))
+	if err != nil {
+		return nil, err
+	}
+
+	return bun.NewDB(sqldb, sqlitedialect.New()), nil
+}
+
+// applySQLitePragmas appends performance-tuned PRAGMA settings to the DSN.
+func applySQLitePragmas(dsn string) string {
+	pragmas := []string{
+		"_pragma=journal_mode(WAL)",
+		"_pragma=synchronous(NORMAL)",
+		"_pragma=busy_timeout(5000)",
+		"_pragma=cache_size(-64000)",
+		"_pragma=foreign_keys(ON)",
+	}
+
+	sep := "?"
+	if strings.Contains(dsn, "?") {
+		sep = "&"
+	}
+
+	return dsn + sep + strings.Join(pragmas, "&")
+}
+
+func openPostgres(dsn string) *bun.DB {
+	connector := pgdriver.NewConnector(pgdriver.WithDSN(dsn))
+
+	return bun.NewDB(sql.OpenDB(connector), pgdialect.New())
+}
+
+func openMySQL(dsn string) (*bun.DB, error) {
+	sqldb, err := sql.Open("mysql", dsn)
+	if err != nil {
+		return nil, err
+	}
+
+	return bun.NewDB(sqldb, mysqldialect.New()), nil
+}
 
 // Find retrieves all records from the database, grouped by domain.
 func (r *repository) Find(ctx context.Context) ([]*tsdns.Record, error) {
 	var models []recordModel
-	err := r.db.WithContext(ctx).Order("domain, priority").Find(&models).Error
+
+	err := r.db.NewSelect().Model(&models).OrderExpr("domain, priority").Scan(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -142,10 +200,13 @@ func (r *repository) Find(ctx context.Context) ([]*tsdns.Record, error) {
 // FindByDomain retrieves all targets for a single domain name.
 func (r *repository) FindByDomain(ctx context.Context, domain string) (*tsdns.Record, error) {
 	var models []recordModel
-	err := r.db.WithContext(ctx).Where("domain = ?", domain).Order("priority").Find(&models).Error
+
+	err := r.db.NewSelect().Model(&models).
+		Where("domain = ?", domain).OrderExpr("priority").Scan(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	if len(models) == 0 {
 		return nil, errRecordNotFound
 	}
@@ -162,25 +223,24 @@ func (r *repository) Create(ctx context.Context, record *tsdns.Record) error {
 		return errDomainRequired
 	}
 
-	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	return r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
 		now := time.Now().UTC()
 		createdAt := now
 
 		// Preserve CreatedAt timestamp from existing record if it exists.
 		var existing recordModel
-		err := tx.Where("domain = ?", record.Domain).First(&existing).Error
+		err := tx.NewSelect().Model(&existing).Where("domain = ?", record.Domain).Limit(1).Scan(ctx)
 		if err == nil {
 			createdAt = existing.CreatedAt
 		}
 
 		// Delete existing targets for this domain before inserting new ones.
-		err = tx.Where("domain = ?", record.Domain).Delete(&recordModel{}).Error
+		_, err = tx.NewDelete().Model((*recordModel)(nil)).Where("domain = ?", record.Domain).Exec(ctx)
 		if err != nil {
 			return err
 		}
 
 		if len(record.Targets) == 0 {
-			// Save a special row with empty IP to represent NORESPONSE.
 			m := recordModel{
 				InstanceID: record.InstanceID,
 				Domain:     record.Domain,
@@ -190,8 +250,9 @@ func (r *repository) Create(ctx context.Context, record *tsdns.Record) error {
 				CreatedAt:  createdAt,
 				UpdatedAt:  now,
 			}
+			_, err = tx.NewInsert().Model(&m).Exec(ctx)
 
-			return tx.Create(&m).Error
+			return err
 		}
 
 		for i, tp := range record.Targets {
@@ -204,7 +265,8 @@ func (r *repository) Create(ctx context.Context, record *tsdns.Record) error {
 				CreatedAt:  createdAt,
 				UpdatedAt:  now,
 			}
-			err = tx.Create(&m).Error
+
+			_, err = tx.NewInsert().Model(&m).Exec(ctx)
 			if err != nil {
 				return err
 			}
@@ -227,7 +289,7 @@ func groupModels(models []recordModel) []*tsdns.Record {
 	for _, m := range models {
 		if _, ok := groups[m.Domain]; !ok {
 			r := &tsdns.Record{
-				ID:         m.ID, // Use ID of the first target row
+				ID:         m.ID,
 				InstanceID: m.InstanceID,
 				Domain:     m.Domain,
 				Targets:    make([]netip.AddrPort, 0),
@@ -255,11 +317,17 @@ func groupModels(models []recordModel) []*tsdns.Record {
 
 // Delete removes all targets associated with the specified domain name.
 func (r *repository) Delete(ctx context.Context, domain string) error {
-	res := r.db.WithContext(ctx).Where("domain = ?", domain).Delete(&recordModel{})
-	if res.Error != nil {
-		return res.Error
+	res, err := r.db.NewDelete().Model((*recordModel)(nil)).Where("domain = ?", domain).Exec(ctx)
+	if err != nil {
+		return err
 	}
-	if res.RowsAffected == 0 {
+
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if n == 0 {
 		return errRecordNotFound
 	}
 
@@ -268,15 +336,12 @@ func (r *repository) Delete(ctx context.Context, domain string) error {
 
 // DeleteByInstanceID removes all records associated with the specified instance ID.
 func (r *repository) DeleteByInstanceID(ctx context.Context, instanceID int64) error {
-	return r.db.WithContext(ctx).Where("instance_id = ?", instanceID).Delete(&recordModel{}).Error
+	_, err := r.db.NewDelete().Model((*recordModel)(nil)).Where("instance_id = ?", instanceID).Exec(ctx)
+
+	return err
 }
 
 // Close closes the underlying database connection.
 func (r *repository) Close() error {
-	sqlDB, err := r.db.DB()
-	if err != nil {
-		return err
-	}
-
-	return sqlDB.Close()
+	return r.db.Close()
 }
