@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/banner.png" alt="tsdns banner" width="800">
+<img src="https://raw.githubusercontent.com/HoneyBBQ/tsdns/main/assets/banner.png" alt="tsdns banner" width="800">
 
 # tsdns
 
