@@ -128,3 +128,61 @@ func TestParseDSN_requiresScheme(t *testing.T) {
 		t.Fatalf("expected error for DSN without scheme")
 	}
 }
+
+func TestParseDSN_errors(t *testing.T) {
+	cases := []struct {
+		name string
+		dsn  string
+	}{
+		{"empty", ""},
+		{"unsupported scheme", "ftp://host/db"},
+		{"sqlite missing path", "sqlite:"},
+		{"postgres missing host", "postgres:localdb"},
+		{"mysql missing host", "mysql:///db"},
+		{"redis with username", "redis://user:pass@host:6379/0"},
+		{"redis invalid db", "redis://:pass@host:6379/abc"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := parseDSN(tc.dsn)
+			if err == nil {
+				t.Fatalf("expected error for DSN %q", tc.dsn)
+			}
+		})
+	}
+}
+
+func TestOpen_SQLiteMemory(t *testing.T) {
+	repo, backend, err := Open("sqlite::memory:")
+	if err != nil {
+		t.Fatalf("Open failed: %v", err)
+	}
+	defer func() { _ = repo.Close() }()
+
+	if backend != BackendSQL {
+		t.Fatalf("expected backend sql, got %q", backend)
+	}
+}
+
+func TestDetect(t *testing.T) {
+	cases := []struct {
+		dsn     string
+		backend Backend
+	}{
+		{"sqlite::memory:", BackendSQL},
+		{"postgres://user:pass@host:5432/db", BackendSQL},
+		{"mysql://user:pass@host:3306/db", BackendSQL},
+		{"redis://:pass@host:6379/0", BackendRedis},
+	}
+	for _, tc := range cases {
+		t.Run(string(tc.backend)+"/"+tc.dsn, func(t *testing.T) {
+			b, err := Detect(tc.dsn)
+			if err != nil {
+				t.Fatalf("Detect(%q): %v", tc.dsn, err)
+			}
+			if b != tc.backend {
+				t.Fatalf("expected %q, got %q", tc.backend, b)
+			}
+		})
+	}
+}
