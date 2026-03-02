@@ -27,8 +27,8 @@ storage:
   dsn: "sqlite:./tsdns.sqlite"
 
 # Logging Settings
-logger:
+log:
   # Log level: debug, info, warn, error (default: info)
   level: "info"
-  # Log format: console, json (default: console)
-  format: "console"
+  # Log format: text, json (default: text)
+  format: "text"
