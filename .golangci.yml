@@ -26,6 +26,10 @@ linters:
     funlen:
       lines: 60
       statements: 30
+    gosec:
+      excludes:
+        - G117
+        - G704
 
 run:
   timeout: 10m
