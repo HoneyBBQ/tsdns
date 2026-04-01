@@ -95,7 +95,7 @@ func TestServer_Auth(t *testing.T) {
 	// healthz is always public
 	{
 		rr := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodGet, "http://example/healthz", http.NoBody)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://example/healthz", http.NoBody)
 		h.ServeHTTP(rr, req)
 		if rr.Code != http.StatusOK {
 			t.Fatalf("expected 200, got %d", rr.Code)
@@ -105,7 +105,7 @@ func TestServer_Auth(t *testing.T) {
 	// records require auth
 	{
 		rr := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodGet, "http://example/api/v1/records", http.NoBody)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://example/api/v1/records", http.NoBody)
 		h.ServeHTTP(rr, req)
 		if rr.Code != http.StatusUnauthorized {
 			t.Fatalf("expected 401, got %d", rr.Code)
@@ -115,7 +115,7 @@ func TestServer_Auth(t *testing.T) {
 	// Authorization: Bearer <token>
 	{
 		rr := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodGet, "http://example/api/v1/records", http.NoBody)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://example/api/v1/records", http.NoBody)
 		req.Header.Set("Authorization", "Bearer secret")
 		h.ServeHTTP(rr, req)
 		if rr.Code != http.StatusOK {
@@ -126,7 +126,7 @@ func TestServer_Auth(t *testing.T) {
 	// X-API-Token: <token>
 	{
 		rr := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodGet, "http://example/api/v1/records", http.NoBody)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://example/api/v1/records", http.NoBody)
 		req.Header.Set("X-Api-Token", "secret")
 		h.ServeHTTP(rr, req)
 		if rr.Code != http.StatusOK {
@@ -149,7 +149,7 @@ func testServerRecordsCRUDPost(t *testing.T, h http.Handler) {
 	t.Helper()
 	t.Run("POST invalid json", func(t *testing.T) {
 		rr := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPost, "http://example/api/v1/records",
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "http://example/api/v1/records",
 			bytes.NewBufferString("{"))
 		h.ServeHTTP(rr, req)
 		if rr.Code != http.StatusBadRequest {
@@ -159,7 +159,7 @@ func testServerRecordsCRUDPost(t *testing.T, h http.Handler) {
 
 	t.Run("POST missing domain", func(t *testing.T) {
 		rr := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPost, "http://example/api/v1/records",
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "http://example/api/v1/records",
 			bytes.NewBufferString(`{"target":"1.2.3.4"}`))
 		req.Header.Set("Content-Type", "application/json")
 		h.ServeHTTP(rr, req)
@@ -170,7 +170,7 @@ func testServerRecordsCRUDPost(t *testing.T, h http.Handler) {
 
 	t.Run("POST port out of range", func(t *testing.T) {
 		rr := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPost, "http://example/api/v1/records",
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "http://example/api/v1/records",
 			bytes.NewBufferString(`{"domain":"a","targets":["1.2.3.4"],"port":70000}`))
 		req.Header.Set("Content-Type", "application/json")
 		h.ServeHTTP(rr, req)
@@ -181,7 +181,7 @@ func testServerRecordsCRUDPost(t *testing.T, h http.Handler) {
 
 	t.Run("POST success", func(t *testing.T) {
 		rr := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPost, "http://example/api/v1/records",
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "http://example/api/v1/records",
 			bytes.NewBufferString(`{"domain":"demo.example.com","targets":["1.2.3.4:9987"],"port":0,"instance_id":0}`))
 		req.Header.Set("Content-Type", "application/json")
 		h.ServeHTTP(rr, req)
@@ -195,7 +195,7 @@ func testServerRecordsCRUDGet(t *testing.T, h http.Handler) {
 	t.Helper()
 	t.Run("GET list", func(t *testing.T) {
 		rr := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodGet, "http://example/api/v1/records", http.NoBody)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://example/api/v1/records", http.NoBody)
 		h.ServeHTTP(rr, req)
 		if rr.Code != http.StatusOK {
 			t.Fatalf("expected 200, got %d", rr.Code)
@@ -212,7 +212,8 @@ func testServerRecordsCRUDGet(t *testing.T, h http.Handler) {
 
 	t.Run("GET by domain", func(t *testing.T) {
 		rr := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodGet, "http://example/api/v1/records/demo.example.com", http.NoBody)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet,
+			"http://example/api/v1/records/demo.example.com", http.NoBody)
 		h.ServeHTTP(rr, req)
 		if rr.Code != http.StatusOK {
 			t.Fatalf("expected 200, got %d", rr.Code)
@@ -221,7 +222,8 @@ func testServerRecordsCRUDGet(t *testing.T, h http.Handler) {
 
 	t.Run("reject encoded slash", func(t *testing.T) {
 		rr := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodGet, "http://example/api/v1/records/foo%2Fbar", http.NoBody)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet,
+			"http://example/api/v1/records/foo%2Fbar", http.NoBody)
 		h.ServeHTTP(rr, req)
 		if rr.Code != http.StatusBadRequest {
 			t.Fatalf("expected 400, got %d", rr.Code)
@@ -233,7 +235,8 @@ func testServerRecordsCRUDDelete(t *testing.T, h http.Handler) {
 	t.Helper()
 	t.Run("DELETE by domain", func(t *testing.T) {
 		rr := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodDelete, "http://example/api/v1/records/demo.example.com", http.NoBody)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodDelete,
+			"http://example/api/v1/records/demo.example.com", http.NoBody)
 		h.ServeHTTP(rr, req)
 		if rr.Code != http.StatusNoContent {
 			t.Fatalf("expected 204, got %d", rr.Code)
@@ -256,7 +259,8 @@ func TestServer_DeleteInstanceRecords(t *testing.T) {
 	h := s.httpServer.Handler
 
 	rr := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodDelete, "http://example/api/v1/instances/1/records", http.NoBody)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodDelete,
+		"http://example/api/v1/instances/1/records", http.NoBody)
 	h.ServeHTTP(rr, req)
 	if rr.Code != http.StatusNoContent {
 		t.Fatalf("expected 204, got %d", rr.Code)
