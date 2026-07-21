@@ -4,5 +4,3 @@ use (
 	.
 	./core
 )
-
-replace github.com/honeybbq/tsdns/core v0.1.0 => ./core
