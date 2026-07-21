@@ -107,7 +107,7 @@ go install github.com/honeybbq/tsdns/cmd/tsdns@latest
 协议服务器以独立模块发布且不包含任何第三方依赖。应用只需提供自己的 `RecordRepository`，无需下载 CLI、HTTP API、监控指标或存储后端的依赖。
 
 ```bash
-go get github.com/honeybbq/tsdns/core@v0.1.0
+go get github.com/honeybbq/tsdns/core@v0.1.1
 ```
 
 ```go

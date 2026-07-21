@@ -111,7 +111,7 @@ go install github.com/honeybbq/tsdns/cmd/tsdns@latest
 The protocol server is published as a separate module with no third-party dependencies. Applications that provide their own `RecordRepository` can use the core without downloading the CLI, HTTP API, metrics, or storage backend dependencies.
 
 ```bash
-go get github.com/honeybbq/tsdns/core@v0.1.0
+go get github.com/honeybbq/tsdns/core@v0.1.1
 ```
 
 ```go
