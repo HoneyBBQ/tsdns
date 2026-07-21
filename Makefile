@@ -10,14 +10,17 @@ build:
 ## test: Run all unit tests
 test:
 	go test -v -race -cover ./...
+	go test -v -race -cover ./core/...
 
 ## lint: Run golangci-lint static analysis
 lint:
 	golangci-lint run
+	cd core && golangci-lint run --config ../.golangci.yml
 
 ## fmt: Format code and optimize imports
 fmt:
 	go fmt ./...
+	go -C core fmt ./...
 	goimports -w .
 
 ## clean: Clean build artifacts

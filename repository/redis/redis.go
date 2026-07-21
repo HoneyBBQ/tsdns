@@ -15,7 +15,7 @@ import (
 
 	goredis "github.com/redis/go-redis/v9"
 
-	"github.com/honeybbq/tsdns"
+	"github.com/honeybbq/tsdns/core"
 )
 
 var (

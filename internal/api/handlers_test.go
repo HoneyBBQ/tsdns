@@ -11,7 +11,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/honeybbq/tsdns"
+	"github.com/honeybbq/tsdns/core"
 )
 
 type memManager struct {

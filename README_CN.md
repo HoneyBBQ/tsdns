@@ -11,7 +11,7 @@
 [![GitHub](https://img.shields.io/badge/GitHub-Repo-181717?logo=github&logoColor=white)](https://github.com/honeybbq/tsdns)
 [![Docker Hub](https://img.shields.io/badge/Docker_Hub-Image-2496ED?logo=docker&logoColor=white)](https://hub.docker.com/r/honeybbq/tsdns)
 [![GHCR](https://img.shields.io/badge/GHCR-Image-444444?logo=github&logoColor=white)](https://github.com/honeybbq/tsdns/pkgs/container/tsdns)
-[![Go Reference](https://pkg.go.dev/badge/github.com/honeybbq/tsdns.svg)](https://pkg.go.dev/github.com/honeybbq/tsdns)
+[![Go Reference](https://pkg.go.dev/badge/github.com/honeybbq/tsdns/core.svg)](https://pkg.go.dev/github.com/honeybbq/tsdns/core)
 
 [![CI](https://github.com/honeybbq/tsdns/actions/workflows/ci.yml/badge.svg)](https://github.com/honeybbq/tsdns/actions)
 [![Go Report Card](https://goreportcard.com/badge/github.com/honeybbq/tsdns)](https://goreportcard.com/report/github.com/honeybbq/tsdns)
@@ -99,6 +99,26 @@ docker run -d --name tsdns \
 ```bash
 go install github.com/honeybbq/tsdns/cmd/tsdns@latest
 ```
+
+---
+
+## 作为依赖库使用
+
+协议服务器以独立模块发布且不包含任何第三方依赖。应用只需提供自己的 `RecordRepository`，无需下载 CLI、HTTP API、监控指标或存储后端的依赖。
+
+```bash
+go get github.com/honeybbq/tsdns/core@v0.1.0
+```
+
+```go
+import tsdns "github.com/honeybbq/tsdns/core"
+
+server, err := tsdns.NewServer("0.0.0.0").
+	WithRepository(repository).
+	Build()
+```
+
+`repository` 需要实现 `tsdns.RecordRepository`。日志和指标分别使用标准库的 `slog.Logger` 与轻量的 `tsdns.Metrics` 接口。
 
 ---
 

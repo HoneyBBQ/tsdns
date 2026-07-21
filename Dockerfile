@@ -2,8 +2,9 @@ FROM golang:1.25-alpine AS builder
 
 WORKDIR /src
 
-COPY go.mod go.sum ./
-RUN go mod download
+COPY go.mod go.sum go.work ./
+COPY core/go.mod ./core/go.mod
+RUN --mount=type=cache,target=/go/pkg/mod go mod download
 
 COPY . .
 
@@ -38,4 +39,3 @@ EXPOSE 8080/tcp
 
 ENTRYPOINT ["/app/tsdns"]
 CMD ["serve"]
-

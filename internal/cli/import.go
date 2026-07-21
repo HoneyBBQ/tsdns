@@ -9,7 +9,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/honeybbq/tsdns"
+	"github.com/honeybbq/tsdns/core"
 	"github.com/honeybbq/tsdns/internal/config"
 	"github.com/honeybbq/tsdns/internal/importer/tsdnsini"
 	"github.com/honeybbq/tsdns/internal/storage"

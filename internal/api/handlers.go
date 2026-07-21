@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/honeybbq/tsdns"
+	"github.com/honeybbq/tsdns/core"
 )
 
 var (
