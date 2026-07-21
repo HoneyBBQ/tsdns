@@ -11,7 +11,7 @@ Enhanced TeamSpeak TSDNS server with regex matching, multiple storage backends, 
 [![GitHub](https://img.shields.io/badge/GitHub-Repo-181717?logo=github&logoColor=white)](https://github.com/honeybbq/tsdns)
 [![Docker Hub](https://img.shields.io/badge/Docker_Hub-Image-2496ED?logo=docker&logoColor=white)](https://hub.docker.com/r/honeybbq/tsdns)
 [![GHCR](https://img.shields.io/badge/GHCR-Image-444444?logo=github&logoColor=white)](https://github.com/honeybbq/tsdns/pkgs/container/tsdns)
-[![Go Reference](https://pkg.go.dev/badge/github.com/honeybbq/tsdns.svg)](https://pkg.go.dev/github.com/honeybbq/tsdns)
+[![Go Reference](https://pkg.go.dev/badge/github.com/honeybbq/tsdns/core.svg)](https://pkg.go.dev/github.com/honeybbq/tsdns/core)
 
 [![CI](https://github.com/honeybbq/tsdns/actions/workflows/ci.yml/badge.svg)](https://github.com/honeybbq/tsdns/actions)
 [![Go Report Card](https://goreportcard.com/badge/github.com/honeybbq/tsdns)](https://goreportcard.com/report/github.com/honeybbq/tsdns)
@@ -103,6 +103,26 @@ Requires Go 1.25 or later.
 ```bash
 go install github.com/honeybbq/tsdns/cmd/tsdns@latest
 ```
+
+---
+
+## Library
+
+The protocol server is published as a separate module with no third-party dependencies. Applications that provide their own `RecordRepository` can use the core without downloading the CLI, HTTP API, metrics, or storage backend dependencies.
+
+```bash
+go get github.com/honeybbq/tsdns/core@v0.1.1
+```
+
+```go
+import tsdns "github.com/honeybbq/tsdns/core"
+
+server, err := tsdns.NewServer("0.0.0.0").
+	WithRepository(repository).
+	Build()
+```
+
+`repository` must implement `tsdns.RecordRepository`. Logging and metrics use the standard library `slog.Logger` and the small `tsdns.Metrics` interface.
 
 ---
 

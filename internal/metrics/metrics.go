@@ -4,7 +4,7 @@ package metrics
 import (
 	"time"
 
-	"github.com/honeybbq/tsdns"
+	"github.com/honeybbq/tsdns/core"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )

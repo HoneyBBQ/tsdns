@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/honeybbq/tsdns"
+	"github.com/honeybbq/tsdns/core"
 	redisrepo "github.com/honeybbq/tsdns/repository/redis"
 	sqlrepo "github.com/honeybbq/tsdns/repository/sql"
 )

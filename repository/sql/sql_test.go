@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/honeybbq/tsdns"
+	"github.com/honeybbq/tsdns/core"
 )
 
 func newTestRepo(t *testing.T) tsdns.RecordRepository {

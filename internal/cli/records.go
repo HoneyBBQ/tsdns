@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/honeybbq/tsdns"
+	"github.com/honeybbq/tsdns/core"
 	"github.com/honeybbq/tsdns/internal/config"
 	"github.com/honeybbq/tsdns/internal/storage"
 	"github.com/spf13/cobra"

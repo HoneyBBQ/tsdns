@@ -15,6 +15,19 @@ updates:
           - "minor"
           - "patch"
 
+  - package-ecosystem: "gomod"
+    directory: "/core"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      go-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
   # Monitor GitHub Actions workflows
   - package-ecosystem: "github-actions"
     directory: "/"
